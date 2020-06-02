@@ -36,16 +36,23 @@ fp <- fed_pts %>%
          )
 ```
 
-
+Fit the GAM.
+I could use `geom_smooth` here, but it is easier to control both the model and the transparency for the line and confidence interval separately by fitting the model myself.
 ```{r}
-library(publishr)
-m <- mgcv::gam(cum_points ~ s(play_time), data = fp)
+library(mgcv)
+m <- gam(cum_points ~ s(play_time), data = fp)
 pd <- tibble(play_time = seq(min(fp$play_time), max(fp$play_time), length.out = 300))
 prediction <- predict(m, newdata = pd, se.fit = TRUE)
 pd <- pd %>%
   mutate(cum_points = prediction$fit,
          upr = prediction$fit + qnorm(0.975) * prediction$se.fit,
          lwr = prediction$fit - qnorm(0.975) * prediction$se.fit)
+```
+
+Generate the plot.
+Sorry about the complicated `theme` stuff.
+I have all that bottled up into a package function, but that function is not publicly available anywhere.
+```{r}
 p <- ggplot(fp, aes(x = play_time, y = cum_points)) +
   geom_line(data = pd, color = "black", alpha = 2/3) +
   geom_ribbon(data = pd, aes(ymax = upr, ymin = lwr), alpha = 1/3) +
